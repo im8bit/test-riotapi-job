@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 
@@ -10,7 +12,11 @@ import (
 	"github.com/im8bit/test-riotapi-library/riot"
 )
 
-func main() {
+type MyEvent struct {
+	Name string `json:"name"`
+}
+
+func HandleRequest(ctx context.Context, name MyEvent) (bool, error) {
 	var activeActId string = riot.GetActiveActId()
 
 	fmt.Printf("Active Act ID: %s\n", activeActId)
@@ -28,7 +34,14 @@ func main() {
 	var leaderboardDtoData riot.LeaderboardDto = riot.GetLeaderboard(activeActId)
 
 	fmt.Println("Adding Items to Table")
+
 	for _, player := range leaderboardDtoData.Players {
 		aws.AddLeaderboardItem(svc, activeActId, player)
 	}
+
+	return true, nil
+}
+
+func main() {
+	lambda.Start(HandleRequest)
 }
